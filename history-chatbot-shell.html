@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한국사 자기주도학습 챗봇</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3F1E7;
+    --paper-raised:#EDEADC;
+    --ink:#201E1A;
+    --ink-soft:#4A463E;
+    --indigo:#2C4A63;
+    --indigo-soft:#3E6382;
+    --brick:#A1402C;
+    --line:#D8D3C4;
+    --muted:#8B8577;
+    --font-serif:'Noto Serif KR', serif;
+    --font-sans:'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --paper:#1B1A17;
+      --paper-raised:#242320;
+      --ink:#EDEADC;
+      --ink-soft:#C9C4B4;
+      --indigo:#7FA6C4;
+      --indigo-soft:#9BBFD9;
+      --brick:#D97D65;
+      --line:#3A382F;
+      --muted:#8B8577;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1B1A17;
+    --paper-raised:#242320;
+    --ink:#EDEADC;
+    --ink-soft:#C9C4B4;
+    --indigo:#7FA6C4;
+    --indigo-soft:#9BBFD9;
+    --brick:#D97D65;
+    --line:#3A382F;
+    --muted:#8B8577;
+  }
+
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-sans);
+  }
+
+  .app{
+    max-width:640px;
+    margin:0 auto;
+    min-height:100vh;
+    padding:40px 24px 80px;
+  }
+
+  .masthead{
+    border-bottom:1px solid var(--line);
+    padding-bottom:20px;
+    margin-bottom:32px;
+  }
+  .masthead h1{
+    cursor:pointer;
+  }
+  .masthead h1:hover{color:var(--indigo);}
+  .masthead h1:focus-visible{outline:2px solid var(--indigo-soft); outline-offset:4px;}
+  .masthead .eyebrow{
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:0.02em;
+    margin-bottom:6px;
+  }
+  .masthead h1{
+    font-family:var(--font-serif);
+    font-weight:700;
+    font-size:26px;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+
+  /* 홈 메뉴 */
+  .menu-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+  }
+  .menu-item{
+    border-bottom:1px solid var(--line);
+  }
+  .menu-item:first-child{
+    border-top:1px solid var(--line);
+  }
+  .menu-item button{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    background:none;
+    border:none;
+    text-align:left;
+    padding:22px 4px;
+    cursor:pointer;
+    font-family:inherit;
+    color:inherit;
+  }
+  .menu-item button:hover .menu-title,
+  .menu-item button:focus-visible .menu-title{
+    color:var(--indigo);
+  }
+  .menu-item button:focus-visible{
+    outline:2px solid var(--indigo-soft);
+    outline-offset:2px;
+  }
+  .menu-icon{
+    flex:0 0 auto;
+    width:34px;
+    height:34px;
+    color:var(--indigo);
+  }
+  .menu-icon svg{width:100%;height:100%;}
+  .menu-text{flex:1 1 auto;}
+  .menu-title{
+    font-family:var(--font-serif);
+    font-weight:700;
+    font-size:18px;
+    display:block;
+    margin-bottom:4px;
+    transition:color 0.15s ease;
+  }
+  .menu-desc{
+    font-size:14px;
+    color:var(--ink-soft);
+    line-height:1.5;
+  }
+  .menu-arrow{
+    flex:0 0 auto;
+    color:var(--muted);
+    font-size:18px;
+  }
+
+  /* 하위 화면 공통 */
+  .screen{display:none;}
+  .screen.active{
+    display:block;
+    animation:fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn{
+    from{opacity:0; transform:translateY(4px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  .mode-nav{
+    display:none;
+    gap:8px;
+    margin-bottom:28px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:0;
+  }
+  .mode-nav.visible{display:flex;}
+  .mode-nav button{
+    flex:1 1 0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    background:none;
+    border:none;
+    border-bottom:2px solid transparent;
+    padding:10px 4px 12px;
+    color:var(--muted);
+    font-family:var(--font-sans);
+    font-size:12px;
+    cursor:pointer;
+  }
+  .mode-nav button svg{width:20px;height:20px;}
+  .mode-nav button:hover{color:var(--indigo);}
+  .mode-nav button:focus-visible{outline:2px solid var(--indigo-soft); outline-offset:2px;}
+  .mode-nav button.active{
+    color:var(--indigo);
+    border-bottom-color:var(--indigo);
+    font-weight:500;
+  }
+
+  .screen h2{
+    font-family:var(--font-serif);
+    font-weight:700;
+    font-size:22px;
+    margin:0 0 20px;
+  }
+
+  .search-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:24px;
+  }
+  .search-row input{
+    flex:1 1 auto;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:2px;
+    background:var(--paper-raised);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:15px;
+  }
+  .search-row input:focus-visible{
+    outline:2px solid var(--indigo-soft);
+    outline-offset:1px;
+  }
+  .search-row button{
+    padding:12px 18px;
+    background:var(--indigo);
+    color:var(--paper);
+    border:none;
+    border-radius:2px;
+    font-family:inherit;
+    font-size:15px;
+    font-weight:500;
+    cursor:pointer;
+  }
+  .search-row button:hover{background:var(--indigo-soft);}
+  .search-row button:focus-visible{outline:2px solid var(--brick); outline-offset:2px;}
+
+  .result-box{
+    border-top:1px solid var(--line);
+    padding-top:20px;
+  }
+  .result-term{
+    font-family:var(--font-serif);
+    font-size:19px;
+    font-weight:700;
+    margin:0 0 10px;
+  }
+  .result-desc{
+    font-size:15px;
+    line-height:1.7;
+    color:var(--ink);
+  }
+  .result-more{
+    margin-top:12px;
+    font-size:14px;
+    color:var(--indigo);
+    background:none;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .result-more:hover{color:var(--brick);}
+  .result-detail{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px dashed var(--line);
+    font-size:14px;
+    line-height:1.7;
+    color:var(--ink-soft);
+    display:none;
+  }
+  .result-detail.open{display:block;}
+
+  .empty-note{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.6;
+  }
+
+  .candidate-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+  }
+  .candidate-btn{
+    width:100%;
+    text-align:left;
+    background:none;
+    border:none;
+    border-bottom:1px solid var(--line);
+    padding:12px 4px;
+    font-family:inherit;
+    font-size:15px;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .candidate-btn:hover{color:var(--indigo);}
+  .candidate-btn:focus-visible{outline:2px solid var(--indigo-soft); outline-offset:2px;}
+
+  .placeholder-block{
+    border:1px dashed var(--line);
+    padding:20px;
+    border-radius:2px;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.7;
+  }
+
+  .chain{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    margin:16px 0;
+    font-size:14px;
+  }
+  .chain .node{
+    padding:10px 14px;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:2px;
+    color:var(--ink);
+  }
+  .chain .arrow{color:var(--muted);}
+
+  .accordion-item{
+    border-bottom:1px solid var(--line);
+  }
+  .accordion-item:first-child{border-top:1px solid var(--line);}
+  .accordion-head{
+    width:100%;
+    background:none;
+    border:none;
+    text-align:left;
+    padding:16px 4px;
+    font-family:var(--font-serif);
+    font-size:15px;
+    font-weight:500;
+    color:var(--ink);
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .accordion-head:focus-visible{outline:2px solid var(--indigo-soft);}
+  .accordion-body{
+    display:none;
+    padding:0 4px 16px;
+    font-size:14px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+  .accordion-body.open{display:block;}
+
+  .q-item{
+    margin:4px 0 4px 12px;
+    border-left:2px solid var(--line);
+    padding-left:12px;
+  }
+  .q-head{
+    width:100%;
+    background:none;
+    border:none;
+    text-align:left;
+    padding:10px 4px;
+    font-family:var(--font-sans);
+    font-size:14px;
+    color:var(--ink);
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .q-head:focus-visible{outline:2px solid var(--indigo-soft);}
+  .q-explain{
+    padding:0 4px 14px;
+    font-size:13px;
+  }
+  .tag-row{
+    margin-top:10px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .tag-chip{
+    font-size:12px;
+    color:var(--indigo);
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:2px 10px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div class="eyebrow">한국사 자기주도학습</div>
+    <h1 onclick="showScreen('home')" onkeydown="if(event.key==='Enter')showScreen('home')" tabindex="0" role="button" aria-label="메뉴로 돌아가기" title="메뉴로 돌아가기">한국사 챗봇</h1>
+  </div>
+
+  <div class="mode-nav" id="mode-nav">
+    <button data-mode="dict" onclick="goToMode('dict')" aria-label="개념어 사전으로 이동">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h9a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4Z"/><path d="M16 4h1a3 3 0 0 1 3 3v13h-4"/><line x1="8" y1="9" x2="12" y2="9"/></svg>
+      개념어 사전
+    </button>
+    <button data-mode="causal" onclick="goToMode('causal')" aria-label="인과관계·심화로 이동">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 7.5 15.5 16.5"/></svg>
+      인과관계·심화
+    </button>
+    <button data-mode="questions" onclick="goToMode('questions')" aria-label="예상질문 보기로 이동">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 9a3 3 0 1 1 4 2.83c-.7.35-1 .9-1 1.67"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="9.5"/></svg>
+      예상질문
+    </button>
+  </div>
+
+  <!-- 홈 메뉴 -->
+  <div class="screen active" id="screen-home">
+    <ul class="menu-list">
+      <li class="menu-item">
+        <button onclick="showScreen('dict')">
+          <span class="menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h9a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4Z"/><path d="M16 4h1a3 3 0 0 1 3 3v13h-4"/><line x1="8" y1="9" x2="12" y2="9"/></svg>
+          </span>
+          <span class="menu-text">
+            <span class="menu-title">개념어 사전</span>
+            <span class="menu-desc">모르는 역사 개념어를 찾아 뜻을 확인합니다</span>
+          </span>
+          <span class="menu-arrow">›</span>
+        </button>
+      </li>
+      <li class="menu-item">
+        <button onclick="showScreen('causal')">
+          <span class="menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 7.5 15.5 16.5"/></svg>
+          </span>
+          <span class="menu-text">
+            <span class="menu-title">인과관계·심화</span>
+            <span class="menu-desc">배경 → 전개 → 결과의 흐름과 의미를 살펴봅니다</span>
+          </span>
+          <span class="menu-arrow">›</span>
+        </button>
+      </li>
+      <li class="menu-item">
+        <button onclick="showScreen('questions')">
+          <span class="menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 9a3 3 0 1 1 4 2.83c-.7.35-1 .9-1 1.67"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="9.5"/></svg>
+          </span>
+          <span class="menu-text">
+            <span class="menu-title">예상질문 보기</span>
+            <span class="menu-desc">단원별로 정리된 예상 질문과 해설을 훑어봅니다</span>
+          </span>
+          <span class="menu-arrow">›</span>
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ① 개념어 사전 -->
+  <div class="screen" id="screen-dict">
+    <h2>개념어 사전</h2>
+    <div class="search-row">
+      <input id="dict-input" type="text" placeholder="개념어를 입력하세요" onkeydown="if(event.key==='Enter')searchDict()">
+      <button onclick="searchDict()">검색</button>
+    </div>
+    <div id="dict-result"></div>
+  </div>
+
+  <!-- ② 인과관계·심화 -->
+  <div class="screen" id="screen-causal">
+    <h2>인과관계·심화</h2>
+    <div class="search-row">
+      <input id="causal-input" type="text" placeholder="사건이나 제도를 입력하세요">
+      <button onclick="searchCausal()">검색</button>
+    </div>
+    <div id="causal-result">
+      <div class="placeholder-block">검색어를 입력하면 배경 → 전개 → 결과 구조가 이 자리에 표시됩니다.</div>
+    </div>
+  </div>
+
+  <!-- ③ 예상질문 보기 -->
+  <div class="screen" id="screen-questions">
+    <h2>예상질문 보기</h2>
+    <div id="questions-list"></div>
+  </div>
+
+</div>
+
+<script>
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyMOLzApLtjIU7s_jL4m7G3Wz-uoCFI8E4nqD0FU1_jWx8stuCd_QYQt7YUI4p8TN6Kag/exec';
+
+  async function callApi(params){
+    const url = GAS_URL + '?' + new URLSearchParams(params).toString();
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('network');
+    return res.json();
+  }
+
+  function norm(s){
+    return s.replace(/\s+/g, '');
+  }
+
+  function renderDictEntry(entry){
+    const box = document.getElementById('dict-result');
+    if(entry.detail){
+      box.innerHTML = `
+        <div class="result-box">
+          <p class="result-term">${entry.term}</p>
+          <p class="result-desc">${entry.short}</p>
+          <button class="result-more" onclick="this.nextElementSibling.classList.toggle('open')">더 자세히 보기 ▾</button>
+          <div class="result-detail">${entry.detail}</div>
+        </div>`;
+    }else{
+      box.innerHTML = `
+        <div class="result-box">
+          <p class="result-term">${entry.term}</p>
+          <p class="result-desc">${entry.short}</p>
+        </div>`;
+    }
+  }
+
+  async function selectCandidate(term){
+    const box = document.getElementById('dict-result');
+    box.innerHTML = `<p class="empty-note">불러오는 중...</p>`;
+    try{
+      const entry = await callApi({action:'dictDetail', term});
+      if(entry) renderDictEntry(entry);
+      else box.innerHTML = `<div class="result-box"><p class="empty-note">아직 사전에 없는 개념이에요.<br>선생님께 전달했어요.</p></div>`;
+    }catch(err){
+      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+    }
+  }
+
+  async function searchDict(){
+    const q = document.getElementById('dict-input').value.trim();
+    const box = document.getElementById('dict-result');
+    if(!q){ box.innerHTML=''; return; }
+
+    box.innerHTML = `<p class="empty-note">검색 중...</p>`;
+    let candidates;
+    try{
+      candidates = await callApi({action:'dictCandidates', q});
+    }catch(err){
+      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+      return;
+    }
+
+    if(candidates.length===0){
+      box.innerHTML = `<div class="result-box"><p class="empty-note">아직 사전에 없는 개념이에요.<br>선생님께 전달했어요.</p></div>`;
+      return;
+    }
+    if(candidates.length>1){
+      const items = candidates.map(t=>`<li><button class="candidate-btn" onclick="selectCandidate('${t}')">${t}</button></li>`).join('');
+      box.innerHTML = `
+        <div class="result-box">
+          <p class="empty-note" style="margin-bottom:10px;">"${q}" 검색 결과 ${candidates.length}건</p>
+          <ul class="candidate-list">${items}</ul>
+        </div>`;
+      return;
+    }
+    selectCandidate(candidates[0]);
+  }
+
+  function showScreen(name){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen-'+name).classList.add('active');
+
+    const nav = document.getElementById('mode-nav');
+    if(name==='home'){
+      nav.classList.remove('visible');
+    }else{
+      nav.classList.add('visible');
+    }
+    nav.querySelectorAll('button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.mode===name);
+    });
+  }
+
+  function goToMode(name){
+    const isSameScreen = document.getElementById('screen-'+name).classList.contains('active');
+    showScreen(name);
+    if(isSameScreen){
+      if(name==='dict') resetDict();
+      if(name==='causal') resetCausal();
+      if(name==='questions') resetQuestions();
+    }
+  }
+
+  function resetDict(){
+    document.getElementById('dict-input').value = '';
+    document.getElementById('dict-result').innerHTML = '';
+    document.getElementById('dict-input').focus();
+  }
+
+  function resetCausal(){
+    document.getElementById('causal-input').value = '';
+    document.getElementById('causal-result').innerHTML =
+      `<div class="placeholder-block">검색어를 입력하면 배경 → 전개 → 결과 구조가 이 자리에 표시됩니다.</div>`;
+    document.getElementById('causal-input').focus();
+  }
+
+  // ③ 예상질문 — 소단원 목록만 먼저 불러오고, 클릭한 소단원만 그때그때 불러옴 (한 번에 전체 전달 금지)
+  const questionCache = {};
+
+  async function renderQuestions(){
+    const box = document.getElementById('questions-list');
+    box.innerHTML = `<p class="empty-note">소단원 목록을 불러오는 중...</p>`;
+    let units;
+    try{
+      units = await callApi({action:'questionUnits'});
+    }catch(err){
+      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+      return;
+    }
+    box.innerHTML = units.map(unit => `
+      <div class="accordion-item">
+        <button class="accordion-head" onclick="toggleUnit(this, '${unit.replace(/'/g,"\\'")}')">
+          <span>${unit}</span>
+          <span>+</span>
+        </button>
+        <div class="accordion-body"></div>
+      </div>
+    `).join('');
+  }
+
+  async function toggleUnit(btn, unit){
+    const body = btn.nextElementSibling;
+    const wasOpen = body.classList.contains('open');
+    toggleAcc(btn);
+    if(wasOpen) return; // 닫는 동작이면 새로 불러오지 않음
+
+    if(questionCache[unit]){
+      body.innerHTML = questionCache[unit];
+      return;
+    }
+    body.innerHTML = `<p class="empty-note" style="padding:12px 4px;">불러오는 중...</p>`;
+    try{
+      const qs = await callApi({action:'questionsByUnit', unit});
+      const html = qs.map(item => `
+        <div class="q-item">
+          <button class="q-head" onclick="toggleAcc(this)">
+            <span>${item.q}</span>
+            <span>+</span>
+          </button>
+          <div class="accordion-body q-explain">
+            ${item.explain}
+            <div class="tag-row">${item.tags.map(t=>`<span class="tag-chip">${t}</span>`).join('')}</div>
+          </div>
+        </div>
+      `).join('');
+      questionCache[unit] = html;
+      body.innerHTML = html;
+    }catch(err){
+      body.innerHTML = `<p class="empty-note" style="padding:12px 4px;">서버 연결에 실패했습니다.</p>`;
+    }
+  }
+
+  function resetQuestions(){
+    document.querySelectorAll('#screen-questions .accordion-body').forEach(b=>b.classList.remove('open'));
+    document.querySelectorAll('#screen-questions .accordion-head span:last-child, #screen-questions .q-head span:last-child').forEach(s=>s.textContent='+');
+  }
+
+  function renderCausalEntry(entry){
+    const box = document.getElementById('causal-result');
+    box.innerHTML = `
+      <p class="result-term">${entry.term}</p>
+      <div class="chain">
+        <span class="node">${entry.bg}</span><span class="arrow">→</span>
+        <span class="node">${entry.flow}</span><span class="arrow">→</span>
+        <span class="node">${entry.result}</span>
+      </div>
+      <div class="result-detail open" style="margin-top:16px;">
+        <strong style="color:var(--ink); font-weight:500;">심화</strong> — ${entry.insight}<br><br>
+        <strong style="color:var(--ink); font-weight:500;">비유</strong> — ${entry.analogy}
+      </div>`;
+  }
+
+  async function selectCausalCandidate(term){
+    const box = document.getElementById('causal-result');
+    box.innerHTML = `<p class="empty-note">불러오는 중...</p>`;
+    try{
+      const entry = await callApi({action:'causalDetail', term});
+      if(entry) renderCausalEntry(entry);
+      else box.innerHTML = `<div class="result-box"><p class="empty-note">아직 이 개념의 인과관계 카드가 준비되지 않았습니다.</p></div>`;
+    }catch(err){
+      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+    }
+  }
+
+  async function searchCausal(){
+    const q = document.getElementById('causal-input').value.trim();
+    const box = document.getElementById('causal-result');
+    if(!q){
+      resetCausal();
+      return;
+    }
+    box.innerHTML = `<p class="empty-note">검색 중...</p>`;
+    let candidates;
+    try{
+      candidates = await callApi({action:'causalCandidates', q});
+    }catch(err){
+      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+      return;
+    }
+
+    if(candidates.length===0){
+      box.innerHTML = `<div class="result-box"><p class="empty-note">아직 이 개념의 인과관계 카드가 준비되지 않았습니다.</p></div>`;
+      return;
+    }
+    if(candidates.length>1){
+      const items = candidates.map(t=>`<li><button class="candidate-btn" onclick="selectCausalCandidate('${t}')">${t}</button></li>`).join('');
+      box.innerHTML = `
+        <p class="empty-note" style="margin-bottom:10px;">"${q}" 검색 결과 ${candidates.length}건</p>
+        <ul class="candidate-list">${items}</ul>`;
+      return;
+    }
+    selectCausalCandidate(candidates[0]);
+  }
+
+  function toggleAcc(btn){
+    const body = btn.nextElementSibling;
+    body.classList.toggle('open');
+    btn.querySelector('span:last-child').textContent = body.classList.contains('open') ? '−' : '+';
+  }
+
+  renderQuestions();
+</script>
+</body>
+</html>
