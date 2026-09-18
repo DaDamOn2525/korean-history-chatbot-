@@ -333,11 +333,20 @@
     border-bottom:1px solid var(--line);
     padding:12px 4px;
     font-family:inherit;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .candidate-term{
     font-size:15px;
     color:var(--ink);
-    cursor:pointer;
   }
-  .candidate-btn:hover{color:var(--indigo);}
+  .candidate-snippet{
+    font-size:13px;
+    color:var(--muted);
+  }
+  .candidate-btn:hover .candidate-term{color:var(--indigo);}
   .candidate-btn:focus-visible{outline:2px solid var(--indigo-soft); outline-offset:2px;}
 
   .placeholder-block{
@@ -697,7 +706,13 @@
       renderDictEntry(res.single);
       return;
     }
-    const items = res.candidates.map(t=>`<li><button class="candidate-btn" onclick="selectCandidate('${t}')">${t}</button></li>`).join('');
+    const items = res.candidates.map(c=>`
+      <li>
+        <button class="candidate-btn" onclick="selectCandidate('${c.term}')">
+          <span class="candidate-term">${c.term}</span>
+          <span class="candidate-snippet">${c.snippet}</span>
+        </button>
+      </li>`).join('');
     box.innerHTML = `
       <div class="result-box">
         <p class="empty-note" style="margin-bottom:10px;">"${q}" 검색 결과 ${res.candidates.length}건</p>
@@ -765,7 +780,13 @@
       renderCausalEntry(res.single);
       return;
     }
-    const items = res.candidates.map(t=>`<li><button class="candidate-btn" onclick="selectCausalCandidate('${t}')">${t}</button></li>`).join('');
+    const items = res.candidates.map(c=>`
+      <li>
+        <button class="candidate-btn" onclick="selectCausalCandidate('${c.term}')">
+          <span class="candidate-term">${c.term}</span>
+          <span class="candidate-snippet">${c.snippet}</span>
+        </button>
+      </li>`).join('');
     box.innerHTML = `
       <p class="empty-note" style="margin-bottom:10px;">"${q}" 검색 결과 ${res.candidates.length}건</p>
       <ul class="candidate-list">${items}</ul>`;
