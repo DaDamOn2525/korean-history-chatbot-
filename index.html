@@ -562,20 +562,37 @@
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbyMOLzApLtjIU7s_jL4m7G3Wz-uoCFI8E4nqD0FU1_jWx8stuCd_QYQt7YUI4p8TN6Kag/exec';
   const CLASS_ID = new URLSearchParams(location.search).get('class') || '';
 
-  async function fetchOnce(url){
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('network');
-    return res.json();
+  let jsonpCounter = 0;
+
+  /** CORS 제약을 피하기 위해 <script> 태그로 요청하고 콜백으로 응답을 받는 방식 */
+  function jsonpRequest(params){
+    return new Promise((resolve, reject) => {
+      const cbName = 'gasCb_' + (jsonpCounter++) + '_' + Date.now();
+      const script = document.createElement('script');
+      const timeout = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 8000);
+
+      function cleanup(){
+        clearTimeout(timeout);
+        delete window[cbName];
+        script.remove();
+      }
+
+      window[cbName] = (data) => { cleanup(); resolve(data); };
+      script.onerror = () => { cleanup(); reject(new Error('load error')); };
+
+      const url = GAS_URL + '?' + new URLSearchParams({...params, classId: CLASS_ID, callback: cbName}).toString();
+      script.src = url;
+      document.body.appendChild(script);
+    });
   }
 
   /** 일시적인 접속 오류를 완화하기 위해 실패 시 한 번만 자동 재시도 */
   async function callApi(params){
-    const url = GAS_URL + '?' + new URLSearchParams({...params, classId: CLASS_ID}).toString();
     try{
-      return await fetchOnce(url);
+      return await jsonpRequest(params);
     }catch(err){
       await new Promise(r => setTimeout(r, 400));
-      return await fetchOnce(url);
+      return await jsonpRequest(params);
     }
   }
 
