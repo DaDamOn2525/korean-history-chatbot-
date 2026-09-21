@@ -88,6 +88,12 @@
     letter-spacing:0.02em;
     margin-bottom:6px;
   }
+  .notice-line{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+    margin:10px 0 24px;
+  }
 
   /* 홈 메뉴 */
   .menu-list{
@@ -467,6 +473,7 @@
     <div class="eyebrow">한국사 자기주도학습 · © 담온 · 무단 전재·재배포를 금합니다</div>
     <h1 onclick="showScreen('home')" onkeydown="if(event.key==='Enter')showScreen('home')" tabindex="0" role="button" aria-label="메뉴로 돌아가기" title="메뉴로 돌아가기">한국사 챗봇</h1>
   </div>
+  <p class="notice-line">담온 선생님이 제작한 DB를 기반으로 작동합니다. 오류나 추가 요청이 있으면 알려주세요. 최대한 반영하여 작업하겠습니다.</p>
 
   <div class="mode-nav" id="mode-nav">
     <button data-mode="dict" onclick="goToMode('dict')" aria-label="개념어 사전으로 이동">
@@ -480,6 +487,10 @@
     <button data-mode="questions" onclick="goToMode('questions')" aria-label="어떤 질문이 있었을까로 이동">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 9a3 3 0 1 1 4 2.83c-.7.35-1 .9-1 1.67"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="9.5"/></svg>
       어떤 질문이 있었을까?
+    </button>
+    <button data-mode="curiosity" onclick="goToMode('curiosity')" aria-label="궁금증 풀기로 이동">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.5"/><path d="M12 8v5"/><circle cx="12" cy="16.3" r="0.6" fill="currentColor" stroke="none"/></svg>
+      궁금증 풀기
     </button>
   </div>
 
@@ -531,6 +542,18 @@
           <span class="menu-arrow">›</span>
         </button>
       </li>
+      <li class="menu-item">
+        <button onclick="showScreen('curiosity')">
+          <span class="menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.5"/><path d="M12 8v5"/><circle cx="12" cy="16.3" r="0.6" fill="currentColor" stroke="none"/></svg>
+          </span>
+          <span class="menu-text">
+            <span class="menu-title">궁금증 풀기</span>
+            <span class="menu-desc">개념어의 뜻부터 반전 질문까지, 단계별로 호기심을 따라갑니다</span>
+          </span>
+          <span class="menu-arrow">›</span>
+        </button>
+      </li>
     </ul>
   </div>
 
@@ -562,6 +585,17 @@
     </div>
     <div id="questions-result">
       <div class="placeholder-block">개념어를 입력하면 관련된 예상 질문을 모아 보여드립니다.</div>
+    </div>
+  </div>
+
+  <!-- ④ 궁금증 풀기 -->
+  <div class="screen" id="screen-curiosity">
+    <div class="search-row">
+      <input id="curiosity-input" type="text" placeholder="개념어를 입력하세요" onkeydown="if(event.key==='Enter')searchCuriosity()">
+      <button onclick="searchCuriosity()">검색</button>
+    </div>
+    <div id="curiosity-result">
+      <div class="placeholder-block">개념어를 입력하면 "이건 뭐지?"부터 "왜 그럴까?"까지, 단계별 질문과 해설을 모아 보여드립니다.</div>
     </div>
   </div>
 
@@ -605,7 +639,7 @@
     }
   }
 
-  function showScreen(name){
+  function renderScreen(name){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen-'+name).classList.add('active');
 
@@ -623,6 +657,17 @@
     });
   }
 
+  function showScreen(name){
+    renderScreen(name);
+    history.pushState({screen:name}, '', '#'+name);
+  }
+
+  window.addEventListener('popstate', (e)=>{
+    const name = (e.state && e.state.screen) || 'home';
+    renderScreen(name);
+  });
+  history.replaceState({screen:'home'}, '', '#home');
+
   function goToMode(name){
     const isSameScreen = document.getElementById('screen-'+name).classList.contains('active');
     showScreen(name);
@@ -630,6 +675,7 @@
       if(name==='dict') resetDict();
       if(name==='causal') resetCausal();
       if(name==='questions') resetQuestions();
+      if(name==='curiosity') resetCuriosity();
     }
   }
 
@@ -689,7 +735,7 @@
     const box = document.getElementById('dict-result');
     if(!q){ box.innerHTML=''; return; }
 
-    box.innerHTML = `<p class="empty-note">검색 중...</p>`;
+    box.innerHTML = `<p class="empty-note">검색 중... (설명된 내용이 많으면 시간이 조금 더 걸릴 수 있어요)</p>`;
     let res;
     try{
       res = await callApi({action:'dictLookup', q});
@@ -763,7 +809,7 @@
       resetCausal();
       return;
     }
-    box.innerHTML = `<p class="empty-note">검색 중...</p>`;
+    box.innerHTML = `<p class="empty-note">검색 중... (설명된 내용이 많으면 시간이 조금 더 걸릴 수 있어요)</p>`;
     let res;
     try{
       res = await callApi({action:'causalLookup', q});
@@ -808,7 +854,7 @@
       resetQuestions();
       return;
     }
-    box.innerHTML = `<p class="empty-note">검색 중...</p>`;
+    box.innerHTML = `<p class="empty-note">검색 중... (설명된 내용이 많으면 시간이 조금 더 걸릴 수 있어요)</p>`;
     let list;
     try{
       list = await callApi({action:'questionsByTerm', term:q});
@@ -840,6 +886,48 @@
     document.getElementById('questions-result').innerHTML =
       `<div class="placeholder-block">개념어를 입력하면 관련된 예상 질문을 모아 보여드립니다.</div>`;
     document.getElementById('questions-input').focus();
+  }
+
+  /* ===================== ④ 궁금증 풀기 ===================== */
+
+  async function searchCuriosity(){
+    const q = document.getElementById('curiosity-input').value.trim();
+    const box = document.getElementById('curiosity-result');
+    if(!q){
+      resetCuriosity();
+      return;
+    }
+    box.innerHTML = `<p class="empty-note">검색 중... (설명된 내용이 많으면 시간이 조금 더 걸릴 수 있어요)</p>`;
+    let list;
+    try{
+      list = await callApi({action:'curiosityByTerm', term:q});
+    }catch(err){
+      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+      return;
+    }
+
+    if(list.length===0){
+      box.innerHTML = `<div class="result-box"><p class="empty-note">아직 이 개념에 대한 궁금증 풀이가 없습니다.</p></div>`;
+      return;
+    }
+    box.innerHTML = list.map(item => `
+      <div class="q-item">
+        <button class="q-head" onclick="toggleAcc(this)">
+          <span><span class="q-unit-tag">${item.stage} ${item.direction} · ${item.unit}</span>${item.q}</span>
+          <span>+</span>
+        </button>
+        <div class="accordion-body q-explain">
+          ${item.explain}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function resetCuriosity(){
+    document.getElementById('curiosity-input').value = '';
+    document.getElementById('curiosity-result').innerHTML =
+      `<div class="placeholder-block">개념어를 입력하면 "이건 뭐지?"부터 "왜 그럴까?"까지, 단계별 질문과 해설을 모아 보여드립니다.</div>`;
+    document.getElementById('curiosity-input').focus();
   }
 
   function toggleAcc(btn){
