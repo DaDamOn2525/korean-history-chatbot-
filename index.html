@@ -612,7 +612,7 @@
     return new Promise((resolve, reject) => {
       const cbName = 'gasCb_' + (jsonpCounter++) + '_' + Date.now();
       const script = document.createElement('script');
-      const timeout = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 8000);
+      const timeout = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 12000);
 
       function cleanup(){
         clearTimeout(timeout);
@@ -629,14 +629,17 @@
     });
   }
 
-  /** 일시적인 접속 오류를 완화하기 위해 실패 시 한 번만 자동 재시도 */
+  /** 일시적인 접속 오류를 완화하기 위해 실패 시 최대 두 번까지 자동 재시도 */
   async function callApi(params){
-    try{
-      return await jsonpRequest(params);
-    }catch(err){
-      await new Promise(r => setTimeout(r, 400));
-      return await jsonpRequest(params);
+    const delays = [400, 900];
+    for(let i=0; i<delays.length; i++){
+      try{
+        return await jsonpRequest(params);
+      }catch(err){
+        await new Promise(r => setTimeout(r, delays[i]));
+      }
     }
+    return await jsonpRequest(params);
   }
 
   function renderScreen(name){
@@ -693,7 +696,7 @@
       document.getElementById('ask-text').value = '';
       status.textContent = '선생님께 전달했습니다.';
     }catch(err){
-      status.textContent = '전송에 실패했습니다. 잠시 후 다시 시도해주세요.';
+      status.textContent = '연결이 지체되고 있어요. 보내기를 한 번 더 눌러주세요.';
     }
   }
 
@@ -726,7 +729,7 @@
       if(entry) renderDictEntry(entry);
       else box.innerHTML = `<div class="result-box"><p class="empty-note">아직 사전에 없는 개념이에요.<br>선생님께 전달했어요.</p></div>`;
     }catch(err){
-      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+      box.innerHTML = `<p class="empty-note">연결이 조금 지체되고 있어요. 검색 버튼을 한 번 더 눌러주세요.</p>`;
     }
   }
 
@@ -740,7 +743,7 @@
     try{
       res = await callApi({action:'dictLookup', q});
     }catch(err){
-      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+      box.innerHTML = `<p class="empty-note">연결이 조금 지체되고 있어요. 검색 버튼을 한 번 더 눌러주세요.</p>`;
       return;
     }
 
@@ -798,7 +801,7 @@
       if(entry) renderCausalEntry(entry);
       else box.innerHTML = `<div class="result-box"><p class="empty-note">아직 이 개념의 인과관계 카드가 준비되지 않았습니다.</p></div>`;
     }catch(err){
-      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+      box.innerHTML = `<p class="empty-note">연결이 조금 지체되고 있어요. 검색 버튼을 한 번 더 눌러주세요.</p>`;
     }
   }
 
@@ -814,7 +817,7 @@
     try{
       res = await callApi({action:'causalLookup', q});
     }catch(err){
-      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+      box.innerHTML = `<p class="empty-note">연결이 조금 지체되고 있어요. 검색 버튼을 한 번 더 눌러주세요.</p>`;
       return;
     }
 
@@ -859,7 +862,7 @@
     try{
       list = await callApi({action:'questionsByTerm', term:q});
     }catch(err){
-      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+      box.innerHTML = `<p class="empty-note">연결이 조금 지체되고 있어요. 검색 버튼을 한 번 더 눌러주세요.</p>`;
       return;
     }
 
@@ -902,7 +905,7 @@
     try{
       list = await callApi({action:'curiosityByTerm', term:q});
     }catch(err){
-      box.innerHTML = `<p class="empty-note">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>`;
+      box.innerHTML = `<p class="empty-note">연결이 조금 지체되고 있어요. 검색 버튼을 한 번 더 눌러주세요.</p>`;
       return;
     }
 
